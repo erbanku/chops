@@ -1,0 +1,74 @@
+<UserControl
+    x:Class="Chops.Views.SkillDetailView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="0" Padding="12,8"
+              Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" x:Name="SkillTitle"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       TextTrimming="CharacterEllipsis" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <ToggleButton x:Name="EditToggle" Content="Edit"
+                              Click="EditToggle_Click" />
+                <Button x:Name="SaveButton" Content="Save"
+                        Click="SaveButton_Click">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Metadata Bar -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Padding="12,4"
+                    Background="{ThemeResource LayerFillColorAltBrush}">
+            <TextBlock x:Name="ToolBadges"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock x:Name="FileDate"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        </StackPanel>
+
+        <!-- Content Area: Editor / Preview -->
+        <Grid Grid.Row="2">
+            <!-- Markdown Preview (read-only) -->
+            <WebView2 x:Name="PreviewWebView" Visibility="Visible" />
+
+            <!-- Text Editor -->
+            <TextBox x:Name="EditorTextBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsSpellCheckEnabled="False"
+                     FontFamily="Cascadia Code, Consolas, monospace"
+                     Visibility="Collapsed" />
+        </Grid>
+
+        <!-- Empty State -->
+        <StackPanel x:Name="EmptyDetailState"
+                    Grid.RowSpan="3"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="Collapsed" Spacing="8">
+            <FontIcon Glyph="&#xE8A5;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            <TextBlock Text="Select a skill to view details" HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+    </Grid>
+
+</UserControl>

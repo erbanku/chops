@@ -36,3 +36,10 @@ site/node_modules/
 site/dist/
 site/.astro/
 site/.wrangler/
+
+# .NET / WinUI 3
+ChopsWindows/Chops/bin/
+ChopsWindows/Chops/obj/
+ChopsWindows/.vs/
+*.user
+*.suo

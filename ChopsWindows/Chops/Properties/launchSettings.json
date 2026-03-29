@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Chops (Unpackaged)": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
