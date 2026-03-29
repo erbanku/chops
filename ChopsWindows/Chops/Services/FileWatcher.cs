@@ -58,6 +58,8 @@ public sealed class FileWatcher : IDisposable
     /// <summary>
     /// Debounces rapid filesystem events to avoid redundant scans.
     /// Waits 500ms after the last event before invoking the callback.
+    /// Note: The callback is invoked on a thread pool thread. Callers that need
+    /// UI thread access must marshal via DispatcherQueue.TryEnqueue.
     /// </summary>
     private void DebouncedCallback(string path)
     {

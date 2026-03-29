@@ -25,14 +25,12 @@ public sealed partial class SkillDetailView : UserControl
         PreviewWebView.Visibility = _isEditing ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private async void SaveButton_Click(object sender, RoutedEventArgs e)
+    private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        // Save the current editor content back to the skill file
+        // Save the current editor content back to the skill file.
+        // File save will be wired through the ViewModel/AppState.
         var content = EditorTextBox.Text;
         if (string.IsNullOrEmpty(content))
             return;
-
-        // File save will be wired through the ViewModel/AppState
-        await Task.CompletedTask;
     }
 }

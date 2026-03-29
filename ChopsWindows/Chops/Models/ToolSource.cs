@@ -174,9 +174,9 @@ public static class ToolSourceExtensions
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-            if (File.Exists(Path.Combine(localAppData, "Programs", source.DisplayName(), binaryName)))
+            if (File.Exists(Path.Combine(localAppData, "Programs", source.ToString(), binaryName)))
                 return true;
-            if (File.Exists(Path.Combine(programFiles, source.DisplayName(), binaryName)))
+            if (File.Exists(Path.Combine(programFiles, source.ToString(), binaryName)))
                 return true;
         }
 

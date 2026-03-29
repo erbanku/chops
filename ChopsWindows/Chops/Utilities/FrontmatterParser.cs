@@ -25,7 +25,7 @@ public static class FrontmatterParser
         if (string.IsNullOrWhiteSpace(text))
             return new ParsedSkill([], string.Empty, null, null);
 
-        var lines = text.Split('\n');
+        var lines = text.Split(["\r\n", "\n"], StringSplitOptions.None);
 
         // Check for opening ---
         if (lines.Length == 0 || lines[0].Trim() != "---")
@@ -54,7 +54,7 @@ public static class FrontmatterParser
         if (closingIndex < 0)
             return new ParsedSkill([], text, null, null);
 
-        var content = string.Join('\n', lines.Skip(closingIndex + 1)).TrimStart('\n');
+        var content = string.Join('\n', lines.Skip(closingIndex + 1)).TrimStart('\r', '\n');
 
         frontmatter.TryGetValue("name", out var name);
         frontmatter.TryGetValue("description", out var description);

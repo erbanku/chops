@@ -166,8 +166,25 @@ public class SkillScanner
             var fileInfo = new FileInfo(filePath);
             if (!fileInfo.Exists) return null;
 
-            // Resolve symlinks by getting the full real path
-            var resolvedPath = fileInfo.LinkTarget ?? fileInfo.FullName;
+            // Resolve symlinks by following the full chain
+            var resolvedPath = filePath;
+            try
+            {
+                var target = fileInfo.LinkTarget;
+                while (target is not null)
+                {
+                    if (!Path.IsPathRooted(target))
+                        target = Path.GetFullPath(target, Path.GetDirectoryName(resolvedPath)!);
+                    resolvedPath = target;
+                    var nextInfo = new FileInfo(resolvedPath);
+                    target = nextInfo.LinkTarget;
+                }
+                resolvedPath = Path.GetFullPath(resolvedPath);
+            }
+            catch
+            {
+                resolvedPath = fileInfo.FullName;
+            }
 
             var parsed = SkillParser.Parse(filePath, tool);
             if (parsed is null) return null;
