@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Windows support via WinUI 3 — native Windows desktop app with the same three-column layout and skill scanning
+- Windows project in `ChopsWindows/` using .NET 8, Windows App SDK, EF Core SQLite, and CommunityToolkit.Mvvm
+- Windows tool path scanning under `%USERPROFILE%` (same dotfile conventions as macOS)
+
 ## [1.11.0] - 2026-03-28
 
 - Chat with AI agents directly inside Chops (ACP support)

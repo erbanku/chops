@@ -16,7 +16,7 @@
   <img src="site/public/screenshot.png" width="720" alt="Chops screenshot" />
 </p>
 
-One macOS app to discover, organize, and edit coding agent skills and agents across Claude Code, Cursor, Codex, Windsurf, and Amp. Stop digging through dotfiles.
+A native app for **macOS** and **Windows** to discover, organize, and edit coding agent skills and agents across Claude Code, Cursor, Codex, Windsurf, and Amp. Stop digging through dotfiles.
 
 ## Features
 
@@ -31,6 +31,8 @@ One macOS app to discover, organize, and edit coding agent skills and agents acr
 
 ## Prerequisites
 
+### macOS
+
 - **macOS 15** (Sequoia) or later
 - **Xcode** with command-line tools (`xcode-select --install`)
 - **Homebrew** ([brew.sh](https://brew.sh))
@@ -38,7 +40,18 @@ One macOS app to discover, organize, and edit coding agent skills and agents acr
 
 Sparkle (auto-update framework) is the only external dependency and is pulled automatically by Xcode via Swift Package Manager. No manual setup needed.
 
+### Windows
+
+- **Windows 10** (1809+) or **Windows 11**
+- **Visual Studio 2022** (17.0+) with the **.NET desktop development** and **Windows App SDK C# Templates** workloads
+- **.NET 8 SDK**
+- **Windows App SDK 1.6+** (installed via Visual Studio or NuGet)
+
+EF Core SQLite and CommunityToolkit.Mvvm are restored automatically via NuGet on first build.
+
 ## Quick Start
+
+### macOS
 
 ```bash
 git clone https://github.com/Shpigford/chops.git
@@ -52,13 +65,27 @@ Then hit **Cmd+R** to build and run.
 
 > **Note:** The Xcode project is generated from `project.yml`. If you change `project.yml`, re-run `xcodegen generate`. Don't edit the `.xcodeproj` directly.
 
-### CLI build (no Xcode GUI)
+### Windows
+
+```powershell
+git clone https://github.com/Shpigford/chops.git
+cd chops\ChopsWindows
+dotnet restore
+dotnet build
+dotnet run --project Chops
+```
+
+Or open `ChopsWindows\Chops.sln` in Visual Studio and press **F5** to build and run.
+
+### CLI build (no Xcode GUI — macOS only)
 
 ```bash
 xcodebuild -scheme Chops -configuration Debug build
 ```
 
 ## Project Structure
+
+### macOS (SwiftUI)
 
 ```
 Chops/
@@ -91,11 +118,45 @@ scripts/             # Release pipeline (release.sh)
 site/                # Marketing website (Astro 6)
 ```
 
+### Windows (WinUI 3)
+
+```
+ChopsWindows/
+├── Chops.sln                    # Visual Studio solution
+└── Chops/
+    ├── Chops.csproj             # .NET 8 + Windows App SDK project
+    ├── App.xaml / App.xaml.cs   # Application entry — EF Core database setup
+    ├── MainWindow.xaml / .cs    # Three-column grid layout (Sidebar → List → Detail)
+    ├── Models/
+    │   ├── Skill.cs             # EF Core entity — mirrors Swift Skill model
+    │   ├── SkillCollection.cs   # EF Core entity — user-created groupings
+    │   ├── ToolSource.cs        # Enum of tools with Windows paths (%USERPROFILE%)
+    │   └── ChopsDbContext.cs    # EF Core SQLite context (replaces SwiftData)
+    ├── Services/
+    │   ├── SkillScanner.cs      # Filesystem scanner, deduplicates by resolved path
+    │   ├── SkillParser.cs       # Routes files to frontmatter/MDC parsers
+    │   └── FileWatcher.cs       # FileSystemWatcher-based (replaces FSEvents)
+    ├── Utilities/
+    │   ├── FrontmatterParser.cs # YAML frontmatter extraction
+    │   └── MDCParser.cs         # Cursor .mdc file parsing
+    ├── ViewModels/
+    │   ├── AppState.cs          # Observable state (CommunityToolkit.Mvvm)
+    │   └── MainViewModel.cs     # Main coordinator — scan, filter, select
+    └── Views/
+        ├── SidebarView.xaml     # Tool filters and collections
+        ├── SkillListView.xaml   # Filtered skill/agent list
+        └── SkillDetailView.xaml # Editor + preview with Ctrl+S save
+```
+
 ## Architecture
 
-**SwiftUI + SwiftData**, native macOS with zero web views.
+Both platforms share the same core concepts and three-column layout. The macOS version uses SwiftUI + SwiftData; the Windows version uses WinUI 3 + EF Core SQLite.
 
-### App lifecycle
+### macOS — SwiftUI + SwiftData
+
+Native macOS with zero web views.
+
+#### App lifecycle
 
 1. `ChopsApp` initializes a SwiftData `ModelContainer` (persists `Skill` and `SkillCollection`)
 2. Sparkle updater starts in the background
@@ -104,64 +165,99 @@ site/                # Marketing website (Astro 6)
 5. `SkillScanner` probes all tool directories and upserts discovered skills
 6. `FileWatcher` attaches FSEvents listeners — on any change, the scanner re-runs automatically
 
+### Windows — WinUI 3 + EF Core
+
+Native Windows desktop app using the Windows App SDK (WinUI 3) with C# and .NET 8.
+
+#### App lifecycle
+
+1. `App` creates the EF Core SQLite database (stored in `%LOCALAPPDATA%\Chops\chops.db`)
+2. `MainWindow` renders the three-column grid layout
+3. `MainViewModel` orchestrates scanning via `SkillScanner` and filesystem monitoring via `FileWatcher`
+4. `SkillScanner` probes all tool directories under `%USERPROFILE%` and upserts into SQLite
+5. `FileWatcher` uses `FileSystemWatcher` (Windows equivalent of FSEvents) — on any change, the scanner re-runs automatically
+
+#### Windows-specific notes
+
+- Tool paths use `%USERPROFILE%\.claude\`, `%USERPROFILE%\.cursor\`, etc. (same dotfile conventions as macOS)
+- Data is persisted via EF Core with SQLite (equivalent to SwiftData on macOS)
+- MVVM architecture using CommunityToolkit.Mvvm (`ObservableObject`, `RelayCommand`)
+- Tool detection checks `PATH`, `%LOCALAPPDATA%\Programs\`, and `%PROGRAMFILES%\` for installed binaries
+
 ### Key design decisions
 
-- **No sandbox.** The app needs unrestricted filesystem access to read dotfiles across `~/`. This is intentional and required for core functionality. The entitlements file explicitly disables the app sandbox.
-- **Dedup via symlinks.** Skills are uniquely identified by their resolved symlink path. If the same file is symlinked into multiple tool directories, it shows up as one skill with multiple tool badges.
+- **No sandbox.** The app needs unrestricted filesystem access to read dotfiles across `~/` (macOS) or `%USERPROFILE%` (Windows). This is intentional and required for core functionality.
+- **Dedup via symlinks.** Skills are uniquely identified by their resolved symlink/junction path. If the same file is linked into multiple tool directories, it shows up as one skill with multiple tool badges.
 - **No test suite.** Validate changes manually — build, run, trigger the feature you changed, observe the result.
 
 ### State management
 
-`AppState` is an `@Observable` class that holds all UI state: selected tool filter, selected skill, search text, sidebar filter mode. It's injected via `@Environment` and accessible from any view.
+- **macOS:** `AppState` is an `@Observable` class injected via `@Environment` and accessible from any view.
+- **Windows:** `AppState` is an `ObservableObject` (CommunityToolkit.Mvvm) shared across views via `MainViewModel`.
 
 ### UI layout
 
-Three-column `NavigationSplitView`:
+Three-column layout on both platforms:
 - **Sidebar** — tool filters and collections
 - **List** — filtered/searched skill list
-- **Detail** — skill editor (wraps `NSTextView` for native text editing with Cmd+S save)
+- **Detail** — skill editor (macOS: `NSTextView` with Cmd+S; Windows: `TextBox` with Ctrl+S)
 
 ## Supported Tools
 
 Chops scans these directories for skills and agents:
 
-| Tool | Skills | Agents |
-|------|--------|--------|
-| Claude Code | `~/.claude/skills/` | `~/.claude/agents/` |
-| Cursor | `~/.cursor/skills/`, `~/.cursor/rules` | `~/.cursor/agents/` |
-| Windsurf | `~/.codeium/windsurf/memories/`, `~/.windsurf/rules` | — |
-| Codex | `~/.codex/skills/` | `~/.codex/agents/` |
-| Amp | `~/.config/amp/skills/` | — |
-| Global | `~/.agents/skills/` | — |
+| Tool | macOS Paths | Windows Paths |
+|------|-------------|---------------|
+| Claude Code | `~/.claude/skills/`, `~/.claude/agents/` | `%USERPROFILE%\.claude\skills\`, `%USERPROFILE%\.claude\agents\` |
+| Cursor | `~/.cursor/skills/`, `~/.cursor/rules`, `~/.cursor/agents/` | `%USERPROFILE%\.cursor\skills\`, `%USERPROFILE%\.cursor\rules`, `%USERPROFILE%\.cursor\agents\` |
+| Windsurf | `~/.codeium/windsurf/memories/`, `~/.windsurf/rules` | `%USERPROFILE%\.codeium\windsurf\memories\`, `%USERPROFILE%\.windsurf\rules` |
+| Codex | `~/.codex/skills/`, `~/.codex/agents/` | `%USERPROFILE%\.codex\skills\`, `%USERPROFILE%\.codex\agents\` |
+| Amp | `~/.config/amp/skills/` | `%USERPROFILE%\.config\amp\skills\` |
+| Global | `~/.agents/skills/` | `%USERPROFILE%\.agents\skills\` |
 
 Copilot and Aider are also supported but only detect project-level skills and agents (no global paths). Custom scan paths can be added for any tool.
 
-Tool definitions live in `Chops/Models/ToolSource.swift` — each enum case knows its display name, icon, color, and filesystem paths.
+Tool definitions live in:
+- **macOS:** `Chops/Models/ToolSource.swift` — each enum case knows its display name, icon, color, and filesystem paths
+- **Windows:** `ChopsWindows/Chops/Models/ToolSource.cs` — mirrors the Swift enum with `%USERPROFILE%`-based paths
 
 ## Common Dev Tasks
 
 ### Add support for a new tool
 
+**macOS:**
 1. Add a new case to the `ToolSource` enum in `Chops/Models/ToolSource.swift`
 2. Fill in `displayName`, `iconName`, `color`, and `globalPaths`
 3. Optionally add a logo to the asset catalog and return it from `logoAssetName`
 4. Update `SkillScanner` if the new tool uses a non-standard file layout
 
+**Windows:**
+1. Add a new case to the `ToolSource` enum in `ChopsWindows/Chops/Models/ToolSource.cs`
+2. Fill in `DisplayName()`, `IconGlyph()`, `GlobalPaths()`, and `IsInstalled()`
+3. Update `SkillScanner` if the new tool uses a non-standard file layout
+
 ### Modify skill parsing
 
-- **Frontmatter (`.md`)** — edit `Chops/Utilities/FrontmatterParser.swift`
-- **Cursor `.mdc` files** — edit `Chops/Utilities/MDCParser.swift`
-- **Dispatch logic** — edit `Chops/Services/SkillParser.swift` (decides which parser to use)
+- **macOS:** `Chops/Utilities/FrontmatterParser.swift`, `MDCParser.swift`, `SkillParser.swift`
+- **Windows:** `ChopsWindows/Chops/Utilities/FrontmatterParser.cs`, `MDCParser.cs`, `Services/SkillParser.cs`
 
 ### Change the UI
 
-Views are in `Chops/Views/`, organized by column (Sidebar, Detail) and shared components. The main layout is in `Chops/App/ContentView.swift`.
+- **macOS:** Views are in `Chops/Views/`, organized by column. Main layout in `Chops/App/ContentView.swift`.
+- **Windows:** Views are in `ChopsWindows/Chops/Views/` as XAML + code-behind. Main layout in `MainWindow.xaml`.
 
 ## Testing
 
-No automated test suite. Validate manually:
+No automated test suite on either platform. Validate manually:
 
-1. Build and run the app (Cmd+R)
+**macOS:**
+1. Build and run the app (Cmd+R in Xcode)
+2. Trigger the exact feature you changed
+3. Observe the result — check for correct behavior and error messages
+4. Test edge cases (empty states, missing directories, malformed files)
+
+**Windows:**
+1. Build and run the app (F5 in Visual Studio, or `dotnet run`)
 2. Trigger the exact feature you changed
 3. Observe the result — check for correct behavior and error messages
 4. Test edge cases (empty states, missing directories, malformed files)
