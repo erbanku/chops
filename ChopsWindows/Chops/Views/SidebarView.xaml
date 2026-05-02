@@ -1,0 +1,62 @@
+<UserControl
+    x:Class="Chops.Views.SidebarView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
+
+    <Grid Padding="12" RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Search Box -->
+        <AutoSuggestBox
+            Grid.Row="0"
+            PlaceholderText="Search skills…"
+            QueryIcon="Find"
+            TextChanged="SearchBox_TextChanged" />
+
+        <!-- Tools Section Header -->
+        <TextBlock Grid.Row="1" Text="Tools" Style="{StaticResource CaptionTextBlockStyle}"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,8,0,4" />
+
+        <!-- Tool Filters -->
+        <ListView Grid.Row="2"
+                  x:Name="ToolFilterList"
+                  SelectionMode="Single"
+                  SelectionChanged="ToolFilterList_SelectionChanged">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Padding="4">
+                        <FontIcon Glyph="{Binding IconGlyph}" FontSize="16" />
+                        <TextBlock Text="{Binding DisplayName}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <!-- Collections Section Header -->
+        <TextBlock Grid.Row="3" Text="Collections" Style="{StaticResource CaptionTextBlockStyle}"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,8,0,4" />
+
+        <!-- Collections List -->
+        <ListView Grid.Row="4"
+                  x:Name="CollectionList"
+                  SelectionMode="Single"
+                  SelectionChanged="CollectionList_SelectionChanged">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Padding="4">
+                        <FontIcon Glyph="&#xE8B7;" FontSize="16" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+
+</UserControl>
